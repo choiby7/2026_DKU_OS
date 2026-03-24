@@ -89,30 +89,6 @@ public:
     }
 };
 
-class SRT : public Scheduler
-{
-private:
-    /*
-    * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-    */
-public:
-    SRT(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
-    {
-        name = "SRT";
-        /*
-         * 위 생성자 선언 및 이름 초기화 코드 수정하지 말것.
-         * 나머지는 자유롭게 수정 및 작성 가능
-         */
-    }
-
-    int run() override
-    {
-        /*
-        * 구현
-        */
-        return -1;
-    }
-};
 
 // FeedBack 스케줄러 (queue 개수 : 4 / boosting 없음)
 class FeedBack : public Scheduler

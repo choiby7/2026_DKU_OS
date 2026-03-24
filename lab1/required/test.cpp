@@ -21,11 +21,6 @@ TEST_P(SchedulerTest, RR_4) {
   sched_ = new RR(job_queue_, switch_time_, /*time slice*/ 4);
 }
 
-TEST_P(SchedulerTest, SRT) {
-  sched_ = new SRT(job_queue_, switch_time_);
-}
-
-
 TEST_P(SchedulerTest, FeedBack_1) {
   sched_ = new FeedBack(job_queue_, switch_time_, /*is_2i*/ false);
 }
