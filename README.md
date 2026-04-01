@@ -28,13 +28,20 @@ Follow this file step by step to install and run Linux on a virtual machine. Ins
 Lab0 contains information about installing a virtual machine and Ubuntu. Set the environment according to the documentation. The documentation for lab0 is at the link below.
 
 ## Lab1
-This project explores CPU virtualization scheduling techniques by implementing them and comparing their performance.
+Implement scheduling techniques for CPU virtualization and compare their performance.
+- [Lab1 Document](https://github.com/DKU-EmbeddedSystem-Lab/2026_DKU_OS/blob/main/2026_Lab%201.%20CPU%20Virtualization.pdf)
+- Class 1
+  - ~~[Google Form](https://docs.google.com/forms/d/e/1FAIpQLSdvXwoDOcuvoy0CG9ZiunXwlRVO9idtH7a52ebatwmlLrBFHA/viewform)~~
+  - ~~Deadline: **2026.04.15 23:59**~~
+- Class 2
+  - ~~[Google Form](https://docs.google.com/forms/d/e/1FAIpQLSdmIkNsYkMeTxzbzJVTB3E99evXOUywBC96d21kZQ59SvwY1Q/viewform)~~
+  - ~~Deadline: **2026.04.15 23:59**~~
+- Class 3
+  - ~~[Google Form](https://docs.google.com/forms/d/e/1FAIpQLSd_b4c11tiQAyRpzdPzrOpWZVbFPIAh3VqTCzCCHfM8SLLMZw/viewform)~~
+  - ~~Deadline: **2026.04.15 23:59**~~
 
 ## Lab2
 This project explores concurrent data structures by implementing them and evaluating their performance.
  
 ## Lab3
 This project introduces digital forensic analysis of the ext4 file system by tracing file metadata, inodes, extents, and data blocks.
-
-
-
