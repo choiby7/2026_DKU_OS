@@ -1,8 +1,8 @@
 /*
  *	DKU Operating System Lab (2026)
  *	    Lab1 (Scheduler Algorithm Simulator)
- *	    Student id : 
- *	    Student name :
+ *	    Student id : 32224626
+ *	    Student name : 최범연
  */
 
 #include <string>
@@ -15,22 +15,71 @@
 class FCFS : public Scheduler
 {
 private:
-    /*
-    * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-    */
+    std::vector<Job> all_jobs;
+    std::queue<Job> ready_queue;
+    size_t next_job_idx = 0;
 
 public:
     FCFS(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
         name = "FCFS";
+        // job_queue_는 이름순 정렬이므로, 도착시간 기준으로 재정렬
+        while (!job_queue_.empty()) {
+            all_jobs.push_back(job_queue_.front());
+            job_queue_.pop();
+        }
+        std::sort(all_jobs.begin(), all_jobs.end(), [](const Job& a, const Job& b) {
+            if (a.arrival_time == b.arrival_time) return a.name < b.name;
+            return a.arrival_time < b.arrival_time;
+        });
     }
 
     int run() override
     {
-        /*
-        * 구현
-        */
-        return -1;
+        // 도착한 작업을 ready_queue에 추가
+        while (next_job_idx < all_jobs.size() && all_jobs[next_job_idx].arrival_time <= current_time_) {
+            ready_queue.push(all_jobs[next_job_idx]);
+            next_job_idx++;
+        }
+
+        // 현재 작업이 없으면 다음 작업 선택
+        if (current_job_.name == 0) {
+            if (ready_queue.empty()) {
+                if (next_job_idx >= all_jobs.size())
+                    return -1; // 모든 작업 완료
+                current_time_ += 1;
+                return 0; // CPU 유휴
+            }
+
+            current_job_ = ready_queue.front();
+            ready_queue.pop();
+
+            // 문맥 교환 (첫 작업 제외)
+            if (!end_jobs_.empty()) {
+                current_time_ += switch_time_;
+                // 문맥 교환 시간 동안 도착한 작업 추가
+                while (next_job_idx < all_jobs.size() && all_jobs[next_job_idx].arrival_time <= current_time_) {
+                    ready_queue.push(all_jobs[next_job_idx]);
+                    next_job_idx++;
+                }
+            }
+
+            current_job_.first_run_time = current_time_;
+        }
+
+        // 1초 실행
+        int running = current_job_.name;
+        current_job_.remain_time--;
+        current_time_ += 1;
+
+        // 작업 완료 처리
+        if (current_job_.remain_time == 0) {
+            current_job_.completion_time = current_time_;
+            end_jobs_.push_back(current_job_);
+            current_job_.name = 0;
+        }
+
+        return running;
     }
 };
 
