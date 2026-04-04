@@ -15,10 +15,10 @@
 class FCFS : public Scheduler
 {
 private:
-    //  1. job_queue_ :아직 도착하지 않은 작업들 (상위 클래스 정의)
-    //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들 (신규 정의(FCFS))
-    //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (상위 클래스 정의)
-    //  4. end_jobs_ — 실행 완료된 작업들 (상위 클래스 정의)
+    //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
+    //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(FCFS))
+    //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
+    //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
     std::queue<Job> ready_queue;
 
 public:
@@ -27,7 +27,7 @@ public:
         name = "FCFS";
     }
     /*
-     * 목차 (주요 로직)
+     * FCFS 목차 (주요 로직)
      * 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
      * 2. 현재 작업이 없으면 다음 작업 선택
      * 2-1. 문맥 교환
@@ -81,7 +81,7 @@ public:
             current_job_.name = 0; // 현재 작업 일시적으로 없다고 설정
         }
 
-        return running;
+        return running; // 현재 실행 중인 작업 이름 반환 반환
     }
 };
 
