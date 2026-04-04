@@ -125,13 +125,14 @@ public:
             }
 
             // 2-1. service_time이 가장 짧은 작업 선택 - SPN (동일하면 이름순)
-            auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(),
-                [](const Job& a, const Job& b) {
-                    if (a.service_time == b.service_time) return a.name < b.name;
-                    return a.service_time < b.service_time;
+            // min_element - 범위 내 가장 작은 요소를 찾아 그 위치(iterator)를 반환하는 STL 함수
+            auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(), // ready_queue에서 가장 짧은 작업의 iterator 반환
+                [](const Job& a, const Job& b) { 
+                    if (a.service_time == b.service_time) return a.name < b.name; // service_time 동일하면 이름순
+                    return a.service_time < b.service_time; // service_time이 짧은 순
                 });
-            current_job_ = *shortest;
-            ready_queue.erase(shortest);
+            current_job_ = *shortest; // 가장 짧은 작업을 현재 작업으로 선택
+            ready_queue.erase(shortest); // 선택한 작업을 ready_queue에서 삭제
 
             // 2-2. 문맥 교환
             if (!end_jobs_.empty()) { // 완료된 작업이 있으면 문맥 교환 수행 (첫 작업은 교환 불필요)
