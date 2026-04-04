@@ -52,7 +52,7 @@ public:
                 return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
             
-            // 2-1. 다음 작업 선택 - FCFS
+            // 2-1. ready_queue에 가장 먼저 도착한 다음 작업 선택 - FCFS
             current_job_ = ready_queue.front(); // ready큐에서 수행할 현재 작업을 선택
             ready_queue.pop(); // 수행할 현재 작업 ready큐에서 삭제
 
@@ -124,7 +124,7 @@ public:
                 return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
 
-            // 2-1. service_time이 가장 짧은 작업 선택 : SPN (동일하면 이름순)
+            // 2-1. service_time이 가장 짧은 작업 선택 - SPN (동일하면 이름순)
             auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(),
                 [](const Job& a, const Job& b) {
                     if (a.service_time == b.service_time) return a.name < b.name;
