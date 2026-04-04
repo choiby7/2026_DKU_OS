@@ -168,10 +168,8 @@ class RR : public Scheduler
 private:
     int time_slice_;
     int left_slice_;
-    std::queue<Job> waiting_queue;
-    /* 
-    * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-    */
+    int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
+    std::queue<Job> ready_queue;
 
 public:
     RR(std::queue<Job> jobs, double switch_overhead, int time_slice) : Scheduler(jobs, switch_overhead)
@@ -185,12 +183,79 @@ public:
         left_slice_ = time_slice;
     }
 
+    /*
+     * RR 목차 (주요 로직)
+     * 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
+     * 2. 현재 작업이 없으면 다음 작업 선택
+     * 2-1. ready_queue에서 다음 작업 선택 - RR (FCFS 순서)
+     * 2-2. 문맥 교환
+     * 3. 1초 실행
+     * 4. 작업 완료 또는 타임슬라이스 만료 처리
+     */
     int run() override
     {
-        /* 
-        * 구현
-        */
-        return -1;
+        // 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+            ready_queue.push(job_queue_.front());
+            job_queue_.pop();
+        }
+
+        // 2. 현재 작업이 없으면 다음 작업 선택
+        if (current_job_.name == 0) { // 현재 작업이 없는 상태
+            if (ready_queue.empty()) {
+                if (job_queue_.empty())
+                    return -1; // 모든 작업이 끝났다고 판단. (ready, job 큐 다 empty)
+                current_time_ += 1; // 다음 작업 도착까지 시간 경과
+                return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
+            }
+
+            // 2-1. ready_queue에서 다음 작업 선택 - RR (FCFS 순서)
+            current_job_ = ready_queue.front(); // ready큐 에서 수행할 현재 작업을 선택
+            ready_queue.pop(); // 선택한 작업을 ready_queue에서 삭제
+            left_slice_ = time_slice_; // 타임슬라이스 초기화
+
+            // 2-2. 문맥 교환 (다른 작업으로 전환할 때만 수행)
+            if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
+                // 이전 작업과 다른 작업이면 문맥 교환 수행
+                current_time_ += switch_time_;
+                // 문맥 교환 시간 동안 도착한 작업 추가
+                while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+                    ready_queue.push(job_queue_.front());
+                    job_queue_.pop();
+                }
+            }
+
+            // 첫 실행인 경우 first_run_time 기록
+            if (current_job_.remain_time == current_job_.service_time) {
+                current_job_.first_run_time = current_time_;
+            }
+        }
+
+        // 3. 1초 실행
+        int running = current_job_.name;
+        current_job_.remain_time--;
+        current_time_ += 1;
+        left_slice_--;
+
+        // 4. 작업 완료 또는 타임슬라이스 만료 처리
+        if (current_job_.remain_time == 0) {
+            // 작업 완료
+            current_job_.completion_time = current_time_; // completion_time 기록
+            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
+            end_jobs_.push_back(current_job_); // 완료된 작업 추가
+            current_job_.name = 0; // 현재 작업 없음으로 설정
+        } else if (left_slice_ == 0) {
+            // 타임슬라이스 만료 -> 도착한 작업 먼저 추가 후 현재 작업을 ready_queue 뒤로
+            while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+                ready_queue.push(job_queue_.front());
+                job_queue_.pop();
+            }
+            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
+            ready_queue.push(current_job_); // 현재 작업을 ready_queue 뒤에 추가
+            current_job_.name = 0; // 현재 작업 없음으로 설정
+        }
+
+        return running;
     }
 };
 
