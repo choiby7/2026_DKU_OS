@@ -30,7 +30,8 @@ public:
      * FCFS 목차 (주요 로직)
      * 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
      * 2. 현재 작업이 없으면 다음 작업 선택
-     * 2-1. 문맥 교환
+     * 2-1. 다음 작업 선택 - FCFS
+     * 2-2. 문맥 교환
      * 3. 1초 실행
      * 4. 작업 완료 처리
      */
@@ -50,11 +51,12 @@ public:
                 current_time_ += 1; // 다음 작업 도착까지 시간 경과
                 return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
-
+            
+            // 2-1. 다음 작업 선택 - FCFS
             current_job_ = ready_queue.front(); // ready큐에서 수행할 현재 작업을 선택
             ready_queue.pop(); // 수행할 현재 작업 ready큐에서 삭제
 
-            // 2-1. 문맥 교환
+            // 2-2. 문맥 교환
             if (!end_jobs_.empty()) {  // 완료된 작업이 있으면 문맥 교환 수행(첫 작업은 교환 불필요)
                 current_time_ += switch_time_;
 
@@ -96,24 +98,33 @@ public:
         name = "SPN";
     }
 
+    /*
+     * SPN 목차 (주요 로직)
+     * 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
+     * 2. 현재 작업이 없으면 다음 작업 선택
+     * 2-1. service_time이 가장 짧은 작업 선택 - SPN
+     * 2-2. 문맥 교환
+     * 3. 1초 실행
+     * 4. 작업 완료 처리
+     */
     int run() override
     {
-        // 도착한 작업을 ready_queue에 추가
+        // 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
         while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
             ready_queue.push_back(job_queue_.front());
             job_queue_.pop();
         }
 
-        // 현재 작업이 없으면 다음 작업 선택
-        if (current_job_.name == 0) { // 현재 작업이 없는 상태.
+        // 2. 현재 작업이 없으면 다음 작업 선택
+        if (current_job_.name == 0) { // 현재 작업이 없는 상태
             if (ready_queue.empty()) {
-                if (job_queue_.empty()) 
-                    return -1; // 모든 작업이 끝났다고 판단. (ready, job 큐 다 poped)
+                if (job_queue_.empty())
+                    return -1; // 모든 작업이 끝났다고 판단. (ready, job 큐 다 empty)
                 current_time_ += 1; // 다음 작업 도착까지 시간 경과
                 return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
 
-            // service_time이 가장 짧은 작업 선택 (동일하면 이름순)
+            // 2-1. service_time이 가장 짧은 작업 선택 : SPN (동일하면 이름순)
             auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(),
                 [](const Job& a, const Job& b) {
                     if (a.service_time == b.service_time) return a.name < b.name;
@@ -122,24 +133,25 @@ public:
             current_job_ = *shortest;
             ready_queue.erase(shortest);
 
-            // 문맥 교환 (첫 작업 제외)
-            if (!end_jobs_.empty()) {
-                current_time_ += switch_time_; // 현재 시간에 문맥 교환 비용 시간 추가
-                while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) { // 
+            // 2-2. 문맥 교환
+            if (!end_jobs_.empty()) { // 완료된 작업이 있으면 문맥 교환 수행 (첫 작업은 교환 불필요)
+                current_time_ += switch_time_;
+                // 문맥 교환 시간 동안 도착한 작업 추가
+                while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                     ready_queue.push_back(job_queue_.front());
                     job_queue_.pop();
                 }
             }
 
-            current_job_.first_run_time = current_time_;
+            current_job_.first_run_time = current_time_; // 시작 시간 기록
         }
 
-        // 1초 실행
+        // 3. 1초 실행
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
 
-        // 작업 완료 처리
+        // 4. 작업 완료 처리
         if (current_job_.remain_time == 0) {
             current_job_.completion_time = current_time_;
             end_jobs_.push_back(current_job_);
