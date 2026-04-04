@@ -86,24 +86,75 @@ public:
 class SPN : public Scheduler
 {
 private:
-    /*
-    * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-    */
+    std::vector<Job> all_jobs;
+    std::vector<Job> ready_queue;
+    size_t next_job_idx = 0;
 
 public:
     SPN(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
-        /* 
-        * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-        */
+        name = "SPN";
+        while (!job_queue_.empty()) {
+            all_jobs.push_back(job_queue_.front());
+            job_queue_.pop();
+        }
+        std::sort(all_jobs.begin(), all_jobs.end(), [](const Job& a, const Job& b) {
+            if (a.arrival_time == b.arrival_time) return a.name < b.name;
+            return a.arrival_time < b.arrival_time;
+        });
     }
 
     int run() override
     {
-        /*
-        * 구현
-        */
-        return -1;
+        // 도착한 작업을 ready_queue에 추가
+        while (next_job_idx < all_jobs.size() && all_jobs[next_job_idx].arrival_time <= current_time_) {
+            ready_queue.push_back(all_jobs[next_job_idx]);
+            next_job_idx++;
+        }
+
+        // 현재 작업이 없으면 다음 작업 선택
+        if (current_job_.name == 0) {
+            if (ready_queue.empty()) {
+                if (next_job_idx >= all_jobs.size())
+                    return -1;
+                current_time_ += 1;
+                return 0;
+            }
+
+            // service_time이 가장 짧은 작업 선택 (동일하면 이름순)
+            auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(),
+                [](const Job& a, const Job& b) {
+                    if (a.service_time == b.service_time) return a.name < b.name;
+                    return a.service_time < b.service_time;
+                });
+            current_job_ = *shortest;
+            ready_queue.erase(shortest);
+
+            // 문맥 교환 (첫 작업 제외)
+            if (!end_jobs_.empty()) {
+                current_time_ += switch_time_;
+                while (next_job_idx < all_jobs.size() && all_jobs[next_job_idx].arrival_time <= current_time_) {
+                    ready_queue.push_back(all_jobs[next_job_idx]);
+                    next_job_idx++;
+                }
+            }
+
+            current_job_.first_run_time = current_time_;
+        }
+
+        // 1초 실행
+        int running = current_job_.name;
+        current_job_.remain_time--;
+        current_time_ += 1;
+
+        // 작업 완료 처리
+        if (current_job_.remain_time == 0) {
+            current_job_.completion_time = current_time_;
+            end_jobs_.push_back(current_job_);
+            current_job_.name = 0;
+        }
+
+        return running;
     }
 };
 
