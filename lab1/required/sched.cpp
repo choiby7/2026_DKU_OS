@@ -264,9 +264,26 @@ public:
 class FeedBack : public Scheduler
 {
 private:
-    /*
-    * 구현 (멤버 변수/함수 추가 및 삭제 가능)
-    */
+    static const int NUM_QUEUES = 4;
+    bool is_2i_;
+    int left_slice_;
+    int current_level_ = NUM_QUEUES - 1;
+    int last_job_name_ = 0;
+    std::queue<Job> ready_queues_[NUM_QUEUES]; // Q3=최고, Q0=최저 우선순위
+
+    int get_time_slice(int level) {
+        if (is_2i_) {
+            return (1 << (NUM_QUEUES - 1 - level)); // Q3=1, Q2=2, Q1=4, Q0=8
+        }
+        return 1; // FeedBack_1: 항상 1
+    }
+
+    int find_highest_queue() {
+        for (int i = NUM_QUEUES - 1; i >= 0; i--) {
+            if (!ready_queues_[i].empty()) return i;
+        }
+        return -1;
+    }
 
 public:
     FeedBack(std::queue<Job> jobs, double switch_overhead, bool is_2i) : Scheduler(jobs, switch_overhead) {
@@ -280,12 +297,79 @@ public:
          * 위 생성자 선언 및 이름 초기화 코드 수정하지 말것.
          * 나머지는 자유롭게 수정 및 작성 가능
          */
+        is_2i_ = is_2i;
+        left_slice_ = get_time_slice(NUM_QUEUES - 1);
     }
 
     int run() override {
-        /*
-        * 구현
-        */
-        return -1;
+        // 1. 현재 시간까지 도착한 작업을 최상위 큐(레벨 3)에 추가
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+            Job j = job_queue_.front();
+            job_queue_.pop();
+            ready_queues_[NUM_QUEUES - 1].push(j);
+        }
+
+        // 2. 현재 작업이 없으면 다음 작업 선택
+        if (current_job_.name == 0) {
+            int qi = find_highest_queue();
+            if (qi == -1) {
+                if (job_queue_.empty())
+                    return -1;
+                current_time_ += 1;
+                return 0;
+            }
+
+            current_job_ = ready_queues_[qi].front();
+            ready_queues_[qi].pop();
+            current_level_ = qi;
+            left_slice_ = get_time_slice(qi);
+
+            // 문맥 교환 (다른 작업으로 전환할 때만)
+            if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
+                current_time_ += switch_time_;
+                while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+                    Job j = job_queue_.front();
+                    job_queue_.pop();
+                    ready_queues_[NUM_QUEUES - 1].push(j);
+                }
+            }
+
+            // 첫 실행인 경우 first_run_time 기록
+            if (current_job_.remain_time == current_job_.service_time) {
+                current_job_.first_run_time = current_time_;
+            }
+        }
+
+        // 3. 1초 실행 - 작업 수행
+        int running = current_job_.name;
+        current_job_.remain_time--;
+        current_time_ += 1;
+        left_slice_--;
+
+        // 4. 작업 완료 또는 타임슬라이스 만료 처리
+        if (current_job_.remain_time == 0) {
+            current_job_.completion_time = current_time_;
+            last_job_name_ = current_job_.name;
+            end_jobs_.push_back(current_job_);
+            current_job_.name = 0;
+        } else if (left_slice_ == 0) {
+            while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+                Job j = job_queue_.front();
+                job_queue_.pop();
+                ready_queues_[NUM_QUEUES - 1].push(j);
+            }
+            last_job_name_ = current_job_.name;
+            // 다른 대기 작업이 있으면 강등, 혼자면 현재 레벨 유지
+            int hq = find_highest_queue();
+            if (hq != -1) {
+                int next_level = std::max(current_level_ - 1, 0);
+                ready_queues_[next_level].push(current_job_);
+            } else {
+                ready_queues_[current_level_].push(current_job_);
+            }
+            current_job_.name = 0;
+        }
+
+        return running;
     }
 };
