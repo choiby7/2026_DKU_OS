@@ -71,7 +71,7 @@ public:
             current_job_.first_run_time = current_time_; // 시작 시간 기록
         }
 
-        // 3. 1초 실행
+        // 3. 1초 실행 - 최소 시간단위 수행 (하나의 클럭 사이클을 추상화)
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
@@ -90,7 +90,11 @@ public:
 class SPN : public Scheduler
 {
 private:
-    std::vector<Job> ready_queue;
+    //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
+    //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(SPN))
+    //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
+    //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
+    std::vector<Job> ready_queue; 
 
 public:
     SPN(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
@@ -110,9 +114,9 @@ public:
     int run() override
     {
         // 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
-        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
-            ready_queue.push_back(job_queue_.front());
-            job_queue_.pop();
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) { // job_queue에 현재 시간 기준 도착한 작업이 있는지 확인
+            ready_queue.push_back(job_queue_.front()); // push_back: 뒤에 추가
+            job_queue_.pop(); // pop: 앞의 것을 pop
         }
 
         // 2. 현재 작업이 없으면 다음 작업 선택
@@ -127,7 +131,7 @@ public:
             // 2-1. service_time이 가장 짧은 작업 선택 - SPN (동일하면 이름순)
             // min_element - 범위 내 가장 작은 요소를 찾아 그 위치(iterator)를 반환하는 STL 함수
             auto shortest = std::min_element(ready_queue.begin(), ready_queue.end(), // ready_queue에서 가장 짧은 작업의 iterator 반환
-                [](const Job& a, const Job& b) { 
+                [](const Job& a, const Job& b) {
                     if (a.service_time == b.service_time) return a.name < b.name; // service_time 동일하면 이름순
                     return a.service_time < b.service_time; // service_time이 짧은 순
                 });
@@ -139,7 +143,7 @@ public:
                 current_time_ += switch_time_;
                 // 문맥 교환 시간 동안 도착한 작업 추가
                 while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
-                    ready_queue.push_back(job_queue_.front());
+                    ready_queue.push_back(job_queue_.front()); // ready 큐에 추가
                     job_queue_.pop();
                 }
             }
@@ -147,29 +151,34 @@ public:
             current_job_.first_run_time = current_time_; // 시작 시간 기록
         }
 
-        // 3. 1초 실행
+        // 3. 1초 실행 - 최소 시간단위 수행 (클럭 추상화)
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
 
         // 4. 작업 완료 처리
-        if (current_job_.remain_time == 0) {
-            current_job_.completion_time = current_time_;
-            end_jobs_.push_back(current_job_);
-            current_job_.name = 0;
+        if (current_job_.remain_time == 0) { // 지정한 시간이 다 지나면 수행
+            current_job_.completion_time = current_time_; // completion_time 기록
+            end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
+            current_job_.name = 0; // 현재 작업 일시적으로 없다고 설정
         }
 
-        return running;
+        return running; // 현재 실행 중인 작업 이름 반환
     }
 };
 
 class RR : public Scheduler
 {
 private:
-    int time_slice_;
-    int left_slice_;
+    //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
+    //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(RR))
+    //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
+    //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
+
+    int time_slice_; // 할당된 time_slice의 크기
+    int left_slice_; // 남은 time_slice의 크기
     int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
-    std::queue<Job> ready_queue;
+    std::queue<Job> ready_queue; // 2. ready_queue: 도착했지만 ready 상태의 작업들
 
 public:
     RR(std::queue<Job> jobs, double switch_overhead, int time_slice) : Scheduler(jobs, switch_overhead)
@@ -195,9 +204,9 @@ public:
     int run() override
     {
         // 1. 현재 시간까지 도착한 작업을 ready_queue에 추가
-        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
-            ready_queue.push(job_queue_.front());
-            job_queue_.pop();
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) { // job_queue에 현재 시간 기준 도착한 작업이 있는지 확인
+            ready_queue.push(job_queue_.front()); // push: 뒤에 추가
+            job_queue_.pop(); // pop: 앞의 것을 pop
         }
 
         // 2. 현재 작업이 없으면 다음 작업 선택
@@ -214,40 +223,41 @@ public:
             ready_queue.pop(); // 선택한 작업을 ready_queue에서 삭제
             left_slice_ = time_slice_; // 타임슬라이스 초기화
 
-            // 2-2. 문맥 교환 (다른 작업으로 전환할 때만 수행)
+            // 2-2. 문맥 교환 (다른 작업으로 전환되었을 때만 수행)
             if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
                 // 이전 작업과 다른 작업이면 문맥 교환 수행
                 current_time_ += switch_time_;
                 // 문맥 교환 시간 동안 도착한 작업 추가
                 while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
-                    ready_queue.push(job_queue_.front());
+                    ready_queue.push(job_queue_.front()); // ready 큐에 추가
                     job_queue_.pop();
                 }
             }
 
             // 첫 실행인 경우 first_run_time 기록
             if (current_job_.remain_time == current_job_.service_time) {
-                current_job_.first_run_time = current_time_;
+                current_job_.first_run_time = current_time_; // 시작 시간 기록
             }
         }
 
-        // 3. 1초 실행
+        // 3. 1초 실행 - 최소 시간단위 수행 (클럭 추상화)
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
         left_slice_--;
 
         // 4. 작업 완료 또는 타임슬라이스 만료 처리
-        if (current_job_.remain_time == 0) {
-            // 작업 완료
+        // 작업 완료
+        if (current_job_.remain_time == 0) { // 지정한 시간이 다 지나면 수행
             current_job_.completion_time = current_time_; // completion_time 기록
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
-            end_jobs_.push_back(current_job_); // 완료된 작업 추가
+            end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
             current_job_.name = 0; // 현재 작업 없음으로 설정
-        } else if (left_slice_ == 0) {
-            // 타임슬라이스 만료 -> 도착한 작업 먼저 추가 후 현재 작업을 ready_queue 뒤로
+        }
+        // 타임슬라이스 만료 -> 도착한 작업 먼저 추가 후 현재 작업을 ready_queue 뒤로
+        else if (left_slice_ == 0) {
             while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
-                ready_queue.push(job_queue_.front());
+                ready_queue.push(job_queue_.front()); // ready 큐에 추가
                 job_queue_.pop();
             }
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
@@ -255,7 +265,7 @@ public:
             current_job_.name = 0; // 현재 작업 없음으로 설정
         }
 
-        return running;
+        return running; // 현재 실행 중인 작업 이름 반환
     }
 };
 
@@ -273,7 +283,7 @@ private:
 
     int get_time_slice(int level) {
         if (is_2i_) {
-            return (1 << (NUM_QUEUES - 1 - level)); // Q3=1, Q2=2, Q1=4, Q0=8
+            return (1 << (NUM_QUEUES - 1 - level)); // NUM_QUEUES=4 기준, Q3=1, Q2=2, Q1=4, Q0=8
         }
         return 1; // FeedBack_1: 항상 1
     }
@@ -301,75 +311,89 @@ public:
         left_slice_ = get_time_slice(NUM_QUEUES - 1);
     }
 
+    /*
+     * FeedBack 목차 (주요 로직)
+     * 1. 현재 시간까지 도착한 작업을 최상위 Priority 큐에 추가
+     * 2. 현재 작업이 없으면 다음 작업 선택
+     * 2-1. 가장 높은 우선순위 큐에서 다음 작업 선택 - FeedBack
+     * 2-2. 문맥 교환
+     * 3. 1초 실행
+     * 4. 작업 완료 또는 타임슬라이스 만료 처리
+     */
     int run() override {
         // 1. 현재 시간까지 도착한 작업을 최상위 큐(레벨 3)에 추가
-        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) { // job_queue에 현재 시간 기준 도착한 작업이 있는지 확인
             Job j = job_queue_.front();
-            job_queue_.pop();
-            ready_queues_[NUM_QUEUES - 1].push(j);
+            job_queue_.pop(); // pop: 앞의 것을 pop
+            ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
         }
 
         // 2. 현재 작업이 없으면 다음 작업 선택
-        if (current_job_.name == 0) {
+        if (current_job_.name == 0) { // 현재 작업이 없는 상태
             int qi = find_highest_queue();
             if (qi == -1) {
                 if (job_queue_.empty())
-                    return -1;
-                current_time_ += 1;
-                return 0;
+                    return -1; // 모든 작업이 끝났다고 판단. (ready, job 큐 다 empty)
+                current_time_ += 1; // 다음 작업 도착까지 시간 경과
+                return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
 
-            current_job_ = ready_queues_[qi].front();
-            ready_queues_[qi].pop();
-            current_level_ = qi;
-            left_slice_ = get_time_slice(qi);
+            current_job_ = ready_queues_[qi].front(); // 가장 높은 우선순위 큐에서 수행할 현재 작업을 선택
+            ready_queues_[qi].pop(); // 선택한 작업을 ready_queue에서 삭제
+            current_level_ = qi; // 현재 작업의 큐 레벨 기록
+            left_slice_ = get_time_slice(qi); // 타임슬라이스 초기화
 
-            // 문맥 교환 (다른 작업으로 전환할 때만)
+            // 2-2. 문맥 교환 (다른 작업으로 전환할 때만)
             if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
+                // 이전 작업과 다른 작업이면 문맥 교환 수행
                 current_time_ += switch_time_;
+                // 문맥 교환 시간 동안 도착한 작업 추가
                 while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                     Job j = job_queue_.front();
                     job_queue_.pop();
-                    ready_queues_[NUM_QUEUES - 1].push(j);
+                    ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
                 }
             }
 
             // 첫 실행인 경우 first_run_time 기록
             if (current_job_.remain_time == current_job_.service_time) {
-                current_job_.first_run_time = current_time_;
+                current_job_.first_run_time = current_time_; // 시작 시간 기록
             }
         }
 
-        // 3. 1초 실행 - 작업 수행
+        // 3. 1초 실행 - 최소 시간단위 수행 (클럭 추상화)
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
         left_slice_--;
 
         // 4. 작업 완료 또는 타임슬라이스 만료 처리
-        if (current_job_.remain_time == 0) {
-            current_job_.completion_time = current_time_;
-            last_job_name_ = current_job_.name;
-            end_jobs_.push_back(current_job_);
-            current_job_.name = 0;
-        } else if (left_slice_ == 0) {
+        // 작업 완료
+        if (current_job_.remain_time == 0) { // 지정한 시간이 다 지나면 수행
+            current_job_.completion_time = current_time_; // completion_time 기록
+            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
+            end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
+            current_job_.name = 0; // 현재 작업 없음으로 설정
+        }
+        // 타임슬라이스 만료
+        else if (left_slice_ == 0) {
             while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                 Job j = job_queue_.front();
                 job_queue_.pop();
-                ready_queues_[NUM_QUEUES - 1].push(j);
+                ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
             }
-            last_job_name_ = current_job_.name;
+            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
             // 다른 대기 작업이 있으면 강등, 혼자면 현재 레벨 유지
             int hq = find_highest_queue();
             if (hq != -1) {
                 int next_level = std::max(current_level_ - 1, 0);
-                ready_queues_[next_level].push(current_job_);
+                ready_queues_[next_level].push(current_job_); // 한 단계 낮은 큐에 추가
             } else {
-                ready_queues_[current_level_].push(current_job_);
+                ready_queues_[current_level_].push(current_job_); // 현재 레벨 큐에 유지
             }
-            current_job_.name = 0;
+            current_job_.name = 0; // 현재 작업 없음으로 설정
         }
 
-        return running;
+        return running; // 현재 실행 중인 작업 이름 반환
     }
 };
