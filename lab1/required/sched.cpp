@@ -86,7 +86,7 @@ public:
             current_job_.name = 0; // 현재 작업 일시적으로 없다고 설정
         }
 
-        return running; // 현재 실행 중인 작업 이름 반환 반환
+        return running; // 현재 실행 중인 작업 이름 반환
     }
 };
 
@@ -341,6 +341,7 @@ public:
                 return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
             }
 
+            // 2-1 가장 높은 우선순위 큐에서 다음 작업 선택 - FeedBack
             current_job_ = ready_queues_[qi].front(); // 가장 높은 우선순위 큐에서 수행할 현재 작업을 선택
             ready_queues_[qi].pop(); // 선택한 작업을 ready_queue에서 삭제
             current_level_ = qi; // 현재 작업의 큐 레벨 기록

@@ -18,22 +18,21 @@
 class Lottery : public Scheduler
 {
 private:
-    int counter_ = 0; // 티켓 누적 카운터 (추첨 시 사용)
-    int total_tickets_ = 0; // 전체 티켓 수
-    int winner_ = 0; // 당첨 티켓 번호
+    int counter = 0; // 티켓 누적 카운터 (추첨 시 사용)
+    int total_tickets = 0; // 전체 티켓 수
+    int winner = 0; // 당첨 티켓 번호
     int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
     std::mt19937 gen;
 
 public:
-    Lottery(std::list<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
-    {
+    Lottery(std::list<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead) {
         name = "Lottery";
         // 난수 생성기 초기화
         uint seed = 10; // seed 값 수정 금지
         gen = std::mt19937(seed);
-        total_tickets_ = 0;
+        total_tickets = 0;
         for (const auto& job : job_list_) {
-            total_tickets_ += job.tickets;
+            total_tickets += job.tickets;
         }
     }
 
@@ -57,13 +56,13 @@ public:
             return -1; // 모든 작업이 끝났다고 판단
 
         // 2. 랜덤 티켓 추첨으로 당첨 작업 선택
-        winner_ = getRandomNumber(0, total_tickets_ - 1); // 당첨 티켓 번호 결정
-        counter_ = 0; // 티켓 누적 카운터 초기화
+        winner = getRandomNumber(0, total_tickets - 1); // 당첨 티켓 번호 결정
+        counter = 0; // 티켓 누적 카운터 초기화
         auto selected = job_list_.begin(); // 당첨 작업의 iterator
 
         for (auto it = job_list_.begin(); it != job_list_.end(); ++it) {
-            counter_ += it->tickets;
-            if (counter_ > winner_) {
+            counter += it->tickets;
+            if (counter > winner) {
                 selected = it;
                 break;
             }
@@ -93,7 +92,7 @@ public:
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
             end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
             // 완료된 작업의 티켓을 총 티켓에서 제거
-            total_tickets_ -= current_job_.tickets;
+            total_tickets -= current_job_.tickets;
             // job_list_에서 완료된 작업 제거
             job_list_.erase(selected);
             current_job_.name = 0; // 현재 작업 없음으로 설정
@@ -112,6 +111,7 @@ public:
 class Stride : public Scheduler
 {
 private:
+    // 각 작업의 현재 pass 값과 stride 값을 관리하는 맵
     std::unordered_map<int, int> pass_map_;
     std::unordered_map<int, int> stride_map_;
     const int BIG_NUMBER = 10000;
@@ -123,6 +123,7 @@ public:
         name = "Stride";
         // job_list_에 있는 각 작업에 대해 stride와 초기 pass 값(0)을 설정
         for (auto& job : job_list_) {
+            // stride = BIG_NUMBER / tickets (tickets는 0이 아님을 가정)
             stride_map_[job.name] = BIG_NUMBER / job.tickets;
             pass_map_[job.name] = 0;
         }
