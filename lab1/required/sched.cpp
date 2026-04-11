@@ -14,11 +14,14 @@
 
 class FCFS : public Scheduler
 {
-private:
-    //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
-    //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(FCFS))
-    //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
-    //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
+    private:
+    /*
+     *  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스(Scheduler) 정의)
+     *  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (FCFS 클래스 신규 정의)
+     *  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
+     *  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
+     */
+    
     std::queue<Job> ready_queue;
 
 public:
