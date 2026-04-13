@@ -10,6 +10,7 @@
 #include <iostream>
 #include <queue>
 #include <algorithm>
+#include <map>
 #include "sched.h"
 
 class FCFS : public Scheduler
@@ -281,10 +282,10 @@ class FeedBack : public Scheduler
 private:
     static const int NUM_QUEUES = 4;
     bool is_2i_;
-    int left_slice_;
     int current_level_ = NUM_QUEUES - 1;
     int last_job_name_ = 0;
     std::queue<Job> ready_queues_[NUM_QUEUES]; // Q3=최고, Q0=최저 우선순위
+    std::map<int, int> job_left_slice_; // 작업별 현재 레벨 잔여 allotment (key = job name)
 
     int get_time_slice(int level) {
         if (is_2i_) {
@@ -313,7 +314,6 @@ public:
          * 나머지는 자유롭게 수정 및 작성 가능
          */
         is_2i_ = is_2i;
-        left_slice_ = get_time_slice(NUM_QUEUES - 1);
     }
 
     /*
@@ -327,88 +327,82 @@ public:
      */
     int run() override {
         // 1. 현재 시간까지 도착한 작업을 최상위 큐(레벨 3)에 추가
-        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) { // job_queue에 현재 시간 기준 도착한 작업이 있는지 확인
+        while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
             Job j = job_queue_.front();
-            job_queue_.pop(); // pop: 앞의 것을 pop
-            ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
-        }
-
-        // 1-1. 우선순위 선점 검사 — 현재 작업보다 높은 레벨 큐에 작업이 있으면 선점
-        if (current_job_.name != 0) {
-            int hq = find_highest_queue();
-            if (hq > current_level_) {
-                // 현재 작업을 자기 레벨 큐로 되돌림 (잔여 quantum 은 단순화상 폐기)
-                ready_queues_[current_level_].push(current_job_);
-                last_job_name_ = current_job_.name; // 다음 run()에서 문맥 교환 트리거
-                current_job_.name = 0; // 현재 작업 비움 → 아래 2.에서 상위 큐 작업 선택
-            }
+            job_queue_.pop();
+            job_left_slice_[j.name] = get_time_slice(NUM_QUEUES - 1); // 최상위 레벨 allotment 초기화
+            ready_queues_[NUM_QUEUES - 1].push(j);
         }
 
         // 2. 현재 작업이 없으면 다음 작업 선택
-        if (current_job_.name == 0) { // 현재 작업이 없는 상태
+        if (current_job_.name == 0) {
             int qi = find_highest_queue();
             if (qi == -1) {
                 if (job_queue_.empty())
-                    return -1; // 모든 작업이 끝났다고 판단. (ready, job 큐 다 empty)
-                current_time_ += 1; // 다음 작업 도착까지 시간 경과
-                return 0; // 아직 도착하지 않은 작업 대기 (CPU 유휴)
+                    return -1;
+                current_time_ += 1;
+                return 0;
             }
 
-            // 2-1 가장 높은 우선순위 큐에서 다음 작업 선택 - FeedBack
-            current_job_ = ready_queues_[qi].front(); // 가장 높은 우선순위 큐에서 수행할 현재 작업을 선택
-            ready_queues_[qi].pop(); // 선택한 작업을 ready_queue에서 삭제
-            current_level_ = qi; // 현재 작업의 큐 레벨 기록
-            left_slice_ = get_time_slice(qi); // 타임슬라이스 초기화
+            // 2-1. 가장 높은 우선순위 큐에서 다음 작업 선택
+            current_job_ = ready_queues_[qi].front();
+            ready_queues_[qi].pop();
+            current_level_ = qi;
+            // 잔여 allotment 는 작업별 map 에서 관리되므로 여기서 초기화하지 않음
 
             // 2-2. 문맥 교환 (다른 작업으로 전환할 때만)
             if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
-                // 이전 작업과 다른 작업이면 문맥 교환 수행
                 current_time_ += switch_time_;
-                // 문맥 교환 시간 동안 도착한 작업 추가
                 while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                     Job j = job_queue_.front();
                     job_queue_.pop();
-                    ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
+                    job_left_slice_[j.name] = get_time_slice(NUM_QUEUES - 1);
+                    ready_queues_[NUM_QUEUES - 1].push(j);
                 }
             }
 
             // 첫 실행인 경우 first_run_time 기록
             if (current_job_.remain_time == current_job_.service_time) {
-                current_job_.first_run_time = current_time_; // 시작 시간 기록
+                current_job_.first_run_time = current_time_;
             }
         }
 
-        // 3. 1초 실행 - 최소 시간단위 수행 (클럭 추상화)
+        // 3. 1초 실행
         int running = current_job_.name;
         current_job_.remain_time--;
         current_time_ += 1;
-        left_slice_--;
+        job_left_slice_[current_job_.name]--; // 현재 레벨 누적 사용량 1 증가
 
-        // 4. 작업 완료 또는 타임슬라이스 만료 처리
-        // 작업 완료
-        if (current_job_.remain_time == 0) { // 지정한 시간이 다 지나면 수행
-            current_job_.completion_time = current_time_; // completion_time 기록
-            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
-            end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
-            current_job_.name = 0; // 현재 작업 없음으로 설정
+        // 4. 완료 / allotment 소진 / tick 단위 RR 처리
+        if (current_job_.remain_time == 0) {
+            // 작업 완료
+            current_job_.completion_time = current_time_;
+            last_job_name_ = current_job_.name;
+            end_jobs_.push_back(current_job_);
+            job_left_slice_.erase(current_job_.name);
+            current_job_.name = 0;
         }
-        // 타임슬라이스 만료
-        else if (left_slice_ <= 0) {
-            // 신규 작업 추가
+        else if (job_left_slice_[current_job_.name] <= 0) {
+            // 누적 allotment 소진 → 한 단계 강등
             while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                 Job j = job_queue_.front();
                 job_queue_.pop();
-                ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
+                job_left_slice_[j.name] = get_time_slice(NUM_QUEUES - 1);
+                ready_queues_[NUM_QUEUES - 1].push(j);
             }
-            last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
-            // 표준 MLFQ Rule 4: allotment 소진 시 무조건 강등 (대기 작업 유무와 무관)
-            // I/O 양보가 없는 시뮬레이터이므로 1 time slice = 해당 레벨의 allotment.
-            // 따라서 매 슬라이스 만료마다 한 단계 강등하면 표준 allotment 기반 강등과 등가.
+            last_job_name_ = current_job_.name;
             int next_level = std::max(current_level_ - 1, 0);
-            ready_queues_[next_level].push(current_job_); // 한 단계 낮은 큐에 추가
-            current_job_.name = 0; // 현재 작업 없음으로 설정
+            job_left_slice_[current_job_.name] = get_time_slice(next_level); // 새 레벨 allotment 초기화
+            ready_queues_[next_level].push(current_job_);
+            current_job_.name = 0;
+        }
+        else {
+            // allotment 남음 → 같은 레벨 큐 뒤로 (tick 단위 RR)
+            last_job_name_ = current_job_.name;
+            ready_queues_[current_level_].push(current_job_);
+            current_job_.name = 0;
         }
 
-        return running; // 현재 실행 중인 작업 이름 반환
+        return running;
     }
 };
