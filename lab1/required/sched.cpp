@@ -333,6 +333,17 @@ public:
             ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
         }
 
+        // 1-1. 우선순위 선점 검사 — 현재 작업보다 높은 레벨 큐에 작업이 있으면 선점
+        if (current_job_.name != 0) {
+            int hq = find_highest_queue();
+            if (hq > current_level_) {
+                // 현재 작업을 자기 레벨 큐로 되돌림 (잔여 quantum 은 단순화상 폐기)
+                ready_queues_[current_level_].push(current_job_);
+                last_job_name_ = current_job_.name; // 다음 run()에서 문맥 교환 트리거
+                current_job_.name = 0; // 현재 작업 비움 → 아래 2.에서 상위 큐 작업 선택
+            }
+        }
+
         // 2. 현재 작업이 없으면 다음 작업 선택
         if (current_job_.name == 0) { // 현재 작업이 없는 상태
             int qi = find_highest_queue();
@@ -382,21 +393,19 @@ public:
             current_job_.name = 0; // 현재 작업 없음으로 설정
         }
         // 타임슬라이스 만료
-        else if (left_slice_ == 0) {
+        else if (left_slice_ <= 0) {
+            // 신규 작업 추가
             while (!job_queue_.empty() && job_queue_.front().arrival_time <= current_time_) {
                 Job j = job_queue_.front();
                 job_queue_.pop();
                 ready_queues_[NUM_QUEUES - 1].push(j); // 최상위 큐에 추가
             }
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
-            // 다른 대기 작업이 있으면 강등, 혼자면 현재 레벨 유지
-            int hq = find_highest_queue();
-            if (hq != -1) {
-                int next_level = std::max(current_level_ - 1, 0);
-                ready_queues_[next_level].push(current_job_); // 한 단계 낮은 큐에 추가
-            } else {
-                ready_queues_[current_level_].push(current_job_); // 현재 레벨 큐에 유지
-            }
+            // 표준 MLFQ Rule 4: allotment 소진 시 무조건 강등 (대기 작업 유무와 무관)
+            // I/O 양보가 없는 시뮬레이터이므로 1 time slice = 해당 레벨의 allotment.
+            // 따라서 매 슬라이스 만료마다 한 단계 강등하면 표준 allotment 기반 강등과 등가.
+            int next_level = std::max(current_level_ - 1, 0);
+            ready_queues_[next_level].push(current_job_); // 한 단계 낮은 큐에 추가
             current_job_.name = 0; // 현재 작업 없음으로 설정
         }
 
