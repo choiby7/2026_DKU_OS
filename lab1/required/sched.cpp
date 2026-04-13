@@ -178,10 +178,12 @@ private:
     //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
     //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
 
-    int time_slice_; // 할당된 time_slice의 크기
-    int left_slice_; // 남은 time_slice의 크기
-    int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
     std::queue<Job> ready_queue; // 2. ready_queue: 도착했지만 ready 상태의 작업들
+
+    // 추가된 변수들
+    int time_slice_; // 5. 할당된 time_slice의 크기
+    int left_slice_; // 6. 남은 time_slice의 크기
+    int last_job_name_ = 0; // 7.마지막으로 실행한 작업 이름 (문맥 교환 판단용)
 
 public:
     RR(std::queue<Job> jobs, double switch_overhead, int time_slice) : Scheduler(jobs, switch_overhead)
