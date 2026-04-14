@@ -18,6 +18,14 @@
 class Lottery : public Scheduler
 {
 private:
+    // 단일 연결 리스트 노드
+    struct Node {
+        Job job;
+        Node* next;
+        Node(const Job& j) : job(j), next(nullptr) {}
+    };
+
+    Node* head_ = nullptr; // 연결 리스트 헤드
     int counter = 0; // 티켓 누적 카운터 (추첨 시 사용)
     int total_tickets = 0; // 전체 티켓 수
     int winner = 0; // 당첨 티켓 번호
@@ -31,7 +39,16 @@ public:
         uint seed = 10; // seed 값 수정 금지
         gen = std::mt19937(seed);
         total_tickets = 0;
+        // job_list_ 내용을 단일 연결 리스트로 복사하면서 총 티켓 수 계산
+        Node* tail = nullptr;
         for (const auto& job : job_list_) {
+            Node* node = new Node(job);
+            if (head_ == nullptr) {
+                head_ = node;
+            } else {
+                tail->next = node;
+            }
+            tail = node;
             total_tickets += job.tickets;
         }
     }
@@ -52,24 +69,30 @@ public:
     int run() override
     {
         // 1. 모든 작업이 완료되었는지 확인
-        if (job_list_.empty())
+        if (head_ == nullptr)
             return -1; // 모든 작업이 끝났다고 판단
 
         // 2. 랜덤 티켓 추첨으로 당첨 작업 선택
         winner = getRandomNumber(0, total_tickets - 1); // 당첨 티켓 번호 결정
         counter = 0; // 티켓 누적 카운터 초기화
-        auto selected = job_list_.begin(); // 당첨 작업의 iterator
 
-        for (auto it = job_list_.begin(); it != job_list_.end(); ++it) {
-            counter += it->tickets;
+        //  head부터 current를 전진시키며 누적 티켓이 winner를 넘는 순간 멈춤
+        Node* prev = nullptr;   // 삭제 시 사용할 이전 노드
+        Node* current = head_;
+        // loop : 티켓의 합의 값이winner 보다 커질 때 까지
+        while (current) {
+            counter = counter + current->job.tickets;
+            // counter > winner 이면 이전루프의 current를 사용(마지막 검사한 노드)
             if (counter > winner) {
-                selected = it;
-                break;
+                break; // 'current' 이 winner. break.
             }
+            prev = current; // prev을 현재노드로
+            current = current->next; // 다음 노드로 이동
         }
 
         // 현재 작업 설정
-        current_job_ = *selected;
+        Node* selected = current;
+        current_job_ = selected->job;
 
         // 3. 문맥 교환 (다른 작업으로 전환할 때만)
         if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
@@ -93,13 +116,18 @@ public:
             end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
             // 완료된 작업의 티켓을 총 티켓에서 제거
             total_tickets -= current_job_.tickets;
-            // job_list_에서 완료된 작업 제거
-            job_list_.erase(selected);
+            // 연결 리스트에서 당첨 노드 제거
+            if (prev == nullptr) {
+                head_ = selected->next; // 헤드 노드 제거
+            } else {
+                prev->next = selected->next; // 중간/끝 노드 제거
+            }
+            delete selected;
             current_job_.name = 0; // 현재 작업 없음으로 설정
         } else {
-            // job_list_의 해당 작업 remain_time 갱신
-            selected->remain_time = current_job_.remain_time;
-            selected->first_run_time = current_job_.first_run_time;
+            // 연결 리스트의 해당 노드 remain_time 갱신
+            selected->job.remain_time = current_job_.remain_time;
+            selected->job.first_run_time = current_job_.first_run_time;
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
         }
 
@@ -111,6 +139,14 @@ public:
 class Stride : public Scheduler
 {
 private:
+    // 단일 연결 리스트 노드
+    struct Node {
+        Job job;
+        Node* next;
+        Node(const Job& j) : job(j), next(nullptr) {}
+    };
+
+    Node* head_ = nullptr; // 연결 리스트 헤드
     // 각 작업의 현재 pass 값과 stride 값을 관리하는 맵
     std::unordered_map<int, int> pass_map_;
     std::unordered_map<int, int> stride_map_;
@@ -121,8 +157,16 @@ public:
     Stride(std::list<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
         name = "Stride";
-        // job_list_에 있는 각 작업에 대해 stride와 초기 pass 값(0)을 설정
-        for (auto& job : job_list_) {
+        // job_list_ 내용을 단일 연결 리스트로 복사하며 stride/pass 초기값 설정
+        Node* tail = nullptr;
+        for (const auto& job : job_list_) {
+            Node* node = new Node(job);
+            if (head_ == nullptr) {
+                head_ = node;
+            } else {
+                tail->next = node;
+            }
+            tail = node;
             // stride = BIG_NUMBER / tickets (tickets는 0이 아님을 가정)
             stride_map_[job.name] = BIG_NUMBER / job.tickets;
             pass_map_[job.name] = 0;
@@ -140,18 +184,30 @@ public:
     int run() override
     {
         // 1. 모든 작업이 완료되었는지 확인
-        if (job_list_.empty())
+        if (head_ == nullptr)
             return -1; // 모든 작업이 끝났다고 판단
 
         // 2. pass 값이 가장 작은 작업 선택 (동일하면 이름순)
-        auto selected = std::min_element(job_list_.begin(), job_list_.end(),
-            [&](const Job& a, const Job& b) {
-                if (pass_map_[a.name] == pass_map_[b.name])
-                    return a.name < b.name;
-                return pass_map_[a.name] < pass_map_[b.name];
-            });
+        // head부터 current를 전진시키며 최소 pass 값을 가진 노드를 찾음
+        Node* selected = head_;         // 현재까지 찾은 최소 pass 노드
+        Node* selected_prev = nullptr;  // selected의 이전 노드 (head면 nullptr)
+        Node* prev = head_;             // current의 이전 노드 (current=head_->next로 시작하므로 head_)
+        Node* current = head_->next;
 
-        current_job_ = *selected; // 가장 낮은 pass 값의 작업을 현재 작업으로 선택
+        while (current) {
+            int cur_pass = pass_map_[current->job.name]; // 현재 job의 pass
+            int sel_pass = pass_map_[selected->job.name];// 스케줄링 기준 누적 pass
+            bool better = (cur_pass < sel_pass) || // 누적 pass 보다 현재 job의 pass가 작으면 스케줄
+                          (cur_pass == sel_pass && current->job.name < selected->job.name); // 동률 시 결정론적 순서 보장, 조건: 동률 시 작업 이름이 더 작은 것 선택
+            if (better) { 
+                selected = current; // 선택
+                selected_prev = prev; // 삭제를 위해 이전 노드도 저장
+            }
+            prev = current; // prev 업데이트
+            current = current->next; // 다음 노드로 이동
+        }
+
+        current_job_ = selected->job; // 가장 낮은 pass 값의 작업을 현재 작업으로 선택
 
         // 3. 문맥 교환 (다른 작업으로 전환할 때만)
         if (last_job_name_ != 0 && last_job_name_ != current_job_.name) {
@@ -175,13 +231,18 @@ public:
             current_job_.completion_time = current_time_; // completion_time 기록
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
             end_jobs_.push_back(current_job_); // end_jobs 큐에 완료된 작업 추가
-            // job_list_에서 완료된 작업 제거
-            job_list_.erase(selected);
+            // 연결 리스트에서 선택 노드 제거
+            if (selected_prev == nullptr) {
+                head_ = selected->next; // 헤드 노드 제거
+            } else {
+                selected_prev->next = selected->next; // 중간/끝 노드 제거
+            }
+            delete selected;
             current_job_.name = 0; // 현재 작업 없음으로 설정
         } else {
-            // job_list_의 해당 작업 remain_time 갱신
-            selected->remain_time = current_job_.remain_time;
-            selected->first_run_time = current_job_.first_run_time;
+            // 연결 리스트의 해당 노드 remain_time 갱신
+            selected->job.remain_time = current_job_.remain_time;
+            selected->job.first_run_time = current_job_.first_run_time;
             last_job_name_ = current_job_.name; // 마지막 실행 작업 기록
         }
 
