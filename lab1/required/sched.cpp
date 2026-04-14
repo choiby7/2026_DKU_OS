@@ -405,8 +405,8 @@ public:
                 ready_queues_[NUM_QUEUES - 1].push(j);
             }
             last_job_name_ = current_job_.name; // 다음 tick에 전달할 last_job_name_ 정보 저장.
-            bool alone = true; // 레디큐 전체에서 현재 작업이 유일한 작업이라면 true 
-            for (int i = 0; i < NUM_QUEUES; i++) { 
+            bool alone = true; // 레디큐 전체에서 현재 작업이 유일한 작업이라면 true
+            for (int i = 0; i < NUM_QUEUES; i++) {
                 if (!ready_queues_[i].empty()) { alone = false; break; }
             }
             int target_level = alone ? current_level_ : std::max(current_level_ - 1, 0); // 혼자라면 현재 우선순위 레벨 유지, 아니면 강등
