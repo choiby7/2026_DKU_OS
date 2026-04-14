@@ -25,7 +25,7 @@ class FCFS : public Scheduler
     
     std::queue<Job> ready_queue;
 
-public:
+    public:
     FCFS(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
         name = "FCFS";
@@ -93,14 +93,14 @@ public:
 
 class SPN : public Scheduler
 {
-private:
+    private:
     //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
     //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(SPN))
     //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
     //  4. end_jobs_ — 실행 완료된 작업들                       (상위 클래스 정의)
     std::vector<Job> ready_queue; 
 
-public:
+    public:
     SPN(std::queue<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
         name = "SPN";
@@ -173,7 +173,7 @@ public:
 
 class RR : public Scheduler
 {
-private:
+    private:
     //  1. job_queue_ :아직 도착하지 않은 작업들                (상위 클래스 정의)
     //  2. ready_queue : 도착했지만 아직 실행 대기 중인 작업들  (신규 정의(RR))
     //  3. current_job_ — 현재 CPU에서 실행 중인 작업 (단일)    (상위 클래스 정의)
@@ -186,7 +186,7 @@ private:
     int left_slice_; // 6. 남은 time_slice의 크기
     int last_job_name_ = 0; // 7.마지막으로 실행한 작업 이름 (문맥 교환 판단용)
 
-public:
+    public:
     RR(std::queue<Job> jobs, double switch_overhead, int time_slice) : Scheduler(jobs, switch_overhead)
     {
         name = "RR_" + std::to_string(time_slice);
@@ -279,7 +279,7 @@ public:
 // FeedBack 스케줄러 (queue 개수 : 4 / boosting 없음)
 class FeedBack : public Scheduler
 {
-private:
+    private:
     static const int NUM_QUEUES = 4;
     bool is_2i_;
     int current_level_ = NUM_QUEUES - 1; // 현재 우선순위 레벨 (안전 초기값)
@@ -303,7 +303,7 @@ private:
         return -1;
     }
 
-public:
+    public:
     FeedBack(std::queue<Job> jobs, double switch_overhead, bool is_2i) : Scheduler(jobs, switch_overhead) {
         if (is_2i) {
             name = "FeedBack_2i";

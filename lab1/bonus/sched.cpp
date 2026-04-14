@@ -17,7 +17,7 @@
 
 class Lottery : public Scheduler
 {
-private:
+    private:
     // 단일 연결 리스트 노드
     struct Node {
         Job job;
@@ -32,7 +32,7 @@ private:
     int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
     std::mt19937 gen;
 
-public:
+    public:
     Lottery(std::list<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead) {
         name = "Lottery";
         // 난수 생성기 초기화
@@ -138,7 +138,7 @@ public:
 
 class Stride : public Scheduler
 {
-private:
+    private:
     // 단일 연결 리스트 노드
     struct Node {
         Job job;
@@ -153,7 +153,7 @@ private:
     const int BIG_NUMBER = 10000;
     int last_job_name_ = 0; // 마지막으로 실행한 작업 이름 (문맥 교환 판단용)
 
-public:
+    public:
     Stride(std::list<Job> jobs, double switch_overhead) : Scheduler(jobs, switch_overhead)
     {
         name = "Stride";
