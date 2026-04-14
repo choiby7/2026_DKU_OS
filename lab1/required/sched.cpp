@@ -3,6 +3,7 @@
  *	    Lab1 (Scheduler Algorithm Simulator)
  *	    Student id : 32224626
  *	    Student name : 최범연
+ *	    class : 1분반
  */
 
 #include <string>

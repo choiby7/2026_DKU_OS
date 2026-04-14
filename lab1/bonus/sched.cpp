@@ -3,6 +3,7 @@
  *	    Lab1 (Scheduler Algorithm Simulator Bonus)
  *	    Student id : 32224626
  *	    Student name : 최범연
+ *	    class : 1분반
  */
 
 #include <string>
@@ -39,17 +40,18 @@ class Lottery : public Scheduler
         uint seed = 10; // seed 값 수정 금지
         gen = std::mt19937(seed);
         total_tickets = 0;
+
         // job_list_ 내용을 단일 연결 리스트로 복사하면서 총 티켓 수 계산
-        Node* tail = nullptr;
+        Node* tail = nullptr; // 리스트 끝 노드 추적용 (append 시 O(1) 연결)
         for (const auto& job : job_list_) {
-            Node* node = new Node(job);
+            Node* node = new Node(job); // 힙에 새 노드 할당 (Job 복사본 보관)
             if (head_ == nullptr) {
-                head_ = node;
+                head_ = node; // 첫 노드인 경우 head_로 지정
             } else {
-                tail->next = node;
+                tail->next = node; // 기존 tail의 next에 새 노드를 연결
             }
-            tail = node;
-            total_tickets += job.tickets;
+            tail = node; // tail을 방금 추가한 노드로 설정
+            total_tickets += job.tickets; // 추첨 범위 계산을 위해 전체 티켓수를 누적
         }
     }
 
@@ -159,14 +161,14 @@ class Stride : public Scheduler
         name = "Stride";
         // job_list_ 내용을 단일 연결 리스트로 복사하며 stride/pass 초기값 설정
         Node* tail = nullptr;
-        for (const auto& job : job_list_) {
+        for (const auto& job : job_list_) { // 연결 리스트 확장, stride/pass 초기값 설정
             Node* node = new Node(job);
             if (head_ == nullptr) {
                 head_ = node;
             } else {
                 tail->next = node;
             }
-            tail = node;
+            tail = node; 
             // stride = BIG_NUMBER / tickets (tickets는 0이 아님을 가정)
             stride_map_[job.name] = BIG_NUMBER / job.tickets;
             pass_map_[job.name] = 0;
