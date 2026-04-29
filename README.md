@@ -55,5 +55,11 @@ The Hash Table supports Insert, Lookup, Remove, and Traversal operations, and is
   - [Google Form](https://docs.google.com/forms/d/e/1FAIpQLScPxDw6rQKl-lwNcjlOT2ftnuFA9xsQGrz_CPjsliFZ4h-S-g/viewform?usp=header)
   - Deadline: **2026.05.13 23:59**
  
+**Notice**
+<span style="color:red">
+Some tests may show OK even if your implementation is incomplete, as long as no errors occur.  
+Do not assume your code is correct just because tests pass—always check if your implementation meets the actual requirements!
+</span>
+ 
 ## Lab3
 This project introduces digital forensic analysis of the ext4 file system by tracing file metadata, inodes, extents, and data blocks.
