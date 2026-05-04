@@ -1,9 +1,9 @@
 /*
 *  DKU Operating System Lab (2026)
 *      Lab2 (Concurrency Data Structure: Hash Table)
-*      Student id : 
-*      Student name : 
-*      Date:
+*      Student id : 32224626
+*      Student name : 최범연
+*      Date: 2026-05-04
 */
 
 
@@ -73,7 +73,27 @@ HashTable::HashTable(int num_buckets) : DefaultHashTable(num_buckets) {}
 HashTable::~HashTable() {}
 
 void HashTable::insert(int key, int value) {
-    // 구현
+    int hash = hash_func(key);
+
+    // 기존 key가 있는지 탐색
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            // 이미 존재하면 value를 더하고 upd_cnt 증가
+            node->value += value;
+            node->upd_cnt++;
+            return;
+        }
+        node = node->next;
+    }
+
+    // 존재하지 않으면 새 노드를 버킷 헤드에 삽입
+    HTNode* new_node = new HTNode();
+    new_node->key = key;
+    new_node->value = value;
+    new_node->upd_cnt = 0;
+    new_node->next = buckets_[hash];
+    buckets_[hash] = new_node;
 }
 
 int HashTable::lookup(int key) {
