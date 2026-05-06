@@ -97,15 +97,55 @@ void HashTable::insert(int key, int value) {
 }
 
 int HashTable::lookup(int key) {
-    // 구현
+    int hash = hash_func(key);
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            return node->value;
+        }
+        node = node->next;
+    }
+    return 0;
 }
 
 void HashTable::remove(int key) {
-    // 구현
+    int hash = hash_func(key);
+    HTNode* prev = nullptr;
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            if (prev) {
+                prev->next = node->next;
+            } else {
+                buckets_[hash] = node->next;
+            }
+            delete node;
+            return;
+        }
+        prev = node;
+        node = node->next;
+    }
 }
 
 void HashTable::traversal(KVC* arr) {
-    // 구현
+    std::vector<KVC> tmp;
+    for (int i = 0; i < num_buckets_; i++) {
+        HTNode* node = buckets_[i];
+        while (node) {
+            KVC kvc;
+            kvc.key = node->key;
+            kvc.value = node->value;
+            kvc.upd_cnt = node->upd_cnt;
+            tmp.push_back(kvc);
+            node = node->next;
+        }
+    }
+    std::sort(tmp.begin(), tmp.end(), [](const KVC& a, const KVC& b) {
+        return a.key < b.key;
+    });
+    for (int i = 0; i < (int)tmp.size(); i++) {
+        arr[i] = tmp[i];
+    }
 }
 
 // CoarseHashTable (coarse-grained lock)
@@ -120,21 +160,91 @@ CoarseHashTable::~CoarseHashTable() {
 }
 
 void CoarseHashTable::insert(int key, int value) {
-    // 구현
+    pthread_mutex_lock(&mutex_lock);
+
+    int hash = hash_func(key);
+    // 기존 key가 있는지 탐색
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            // 이미 존재하면 value를 더하고 upd_cnt 증가
+            node->value += value;
+            node->upd_cnt++;
+            pthread_mutex_unlock(&mutex_lock);
+            return;
+        }
+        node = node->next;
+    }
+
+    // 존재하지 않으면 새 노드를 버킷 헤드에 삽입
+    HTNode* new_node = new HTNode();
+    new_node->key = key;
+    new_node->value = value;
+    new_node->upd_cnt = 0;
+    new_node->next = buckets_[hash];
+    buckets_[hash] = new_node;
+    pthread_mutex_unlock(&mutex_lock);
 }
 
 int CoarseHashTable::lookup(int key) {
-    // 구현
+    pthread_mutex_lock(&mutex_lock);
+    int hash = hash_func(key);
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            pthread_mutex_unlock(&mutex_lock);
+            return node->value;
+        }
+        node = node->next;
+    }
+    pthread_mutex_unlock(&mutex_lock);
+    return 0;
 }
 
 void CoarseHashTable::remove(int key) {
-    // 구현
+    pthread_mutex_lock(&mutex_lock);
+    int hash = hash_func(key);
+    HTNode* prev = nullptr;
+    HTNode* node = buckets_[hash];
+    while (node) {
+        if (node->key == key) {
+            if (prev) {
+                prev->next = node->next;
+            } else {
+                buckets_[hash] = node->next;
+            }
+            delete node;
+            pthread_mutex_unlock(&mutex_lock);
+            return;
+        }
+        prev = node;
+        node = node->next;
+    }
+    pthread_mutex_unlock(&mutex_lock);
 }
 
 void CoarseHashTable::traversal(KVC* arr) {
-    // 구현
+    pthread_mutex_lock(&mutex_lock);
+    std::vector<KVC> tmp;
+    for (int i = 0; i < num_buckets_; i++) {
+        HTNode* node = buckets_[i];
+        while (node) {
+            KVC kvc;
+            kvc.key = node->key;
+            kvc.value = node->value;
+            kvc.upd_cnt = node->upd_cnt;
+            tmp.push_back(kvc);
+            node = node->next;
+        }
+    }
+    std::sort(tmp.begin(), tmp.end(), [](const KVC& a, const KVC& b) {
+        return a.key < b.key;
+    });
+    for (int i = 0; i < (int)tmp.size(); i++) {
+        arr[i] = tmp[i];
+    }
+    pthread_mutex_unlock(&mutex_lock);
 }
-
 // FineHashTable (fine-grained lock)
 // FineHashTable 생성자
 FineHashTable::FineHashTable(int num_buckets) : DefaultHashTable(num_buckets) {
@@ -154,7 +264,7 @@ FineHashTable::~FineHashTable() {
 }
 
 void FineHashTable::insert(int key, int value) {
-    // 구현
+
 }
 
 int FineHashTable::lookup(int key) {

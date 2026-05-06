@@ -1,0 +1,221 @@
+[==========] Running 27 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 9 tests from Default/HashTableSingleThreadTest
+[ RUN      ] Default/HashTableSingleThreadTest.NoLock/0
+Execution time: 469 ms
+[       OK ] Default/HashTableSingleThreadTest.NoLock/0 (875 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.NoLock/1
+Execution time: 426 ms
+[       OK ] Default/HashTableSingleThreadTest.NoLock/1 (687 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.NoLock/2
+Execution time: 408 ms
+[       OK ] Default/HashTableSingleThreadTest.NoLock/2 (777 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Coarse/0
+Execution time: 2 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: -1558307984
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/0, where GetParam() = (0, 1000000, 1) (351 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Coarse/1
+Execution time: 6 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 2444
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/1, where GetParam() = (1, 1000000, 1) (222 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Coarse/2
+Execution time: 5 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: -1558305984
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/2, where GetParam() = (2, 1000000, 1) (344 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Fine/0
+Execution time: 2 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/0, where GetParam() = (0, 1000000, 1) (345 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Fine/1
+Execution time: 6 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/1, where GetParam() = (1, 1000000, 1) (226 ms)
+[ RUN      ] Default/HashTableSingleThreadTest.Fine/2
+Execution time: 5 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: -1558305984
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/2, where GetParam() = (2, 1000000, 1) (360 ms)
+[----------] 9 tests from Default/HashTableSingleThreadTest (4191 ms total)
+
+[----------] 18 tests from Default/HashTableMultiThreadTest
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/0
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/0, where GetParam() = (0, 1000000, 2) (366 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/1
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/1, where GetParam() = (0, 1000000, 4) (333 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/2
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/2, where GetParam() = (0, 1000000, 8) (339 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/3
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/3, where GetParam() = (1, 1000000, 2) (232 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/4
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/4, where GetParam() = (1, 1000000, 4) (231 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/5
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/5, where GetParam() = (1, 1000000, 8) (228 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/6
+Execution time: 5 ms
+[       OK ] Default/HashTableMultiThreadTest.Coarse/6 (62 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/7
+Execution time: 3 ms
+[       OK ] Default/HashTableMultiThreadTest.Coarse/7 (59 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Coarse/8
+Execution time: 2 ms
+[       OK ] Default/HashTableMultiThreadTest.Coarse/8 (59 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/0
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/0, where GetParam() = (0, 1000000, 2) (346 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/1
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/1, where GetParam() = (0, 1000000, 4) (334 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/2
+Execution time: 1 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/2, where GetParam() = (0, 1000000, 8) (334 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/3
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/3, where GetParam() = (1, 1000000, 2) (221 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/4
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/4, where GetParam() = (1, 1000000, 4) (285 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/5
+Execution time: 3 ms
+test_util.cpp:142: Failure
+Expected equality of these values:
+  iter->first
+    Which is: 1
+  arr[i].key
+    Which is: 0
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/5, where GetParam() = (1, 1000000, 8) (230 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/6
+Execution time: 3 ms
+[       OK ] Default/HashTableMultiThreadTest.Fine/6 (59 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/7
+Execution time: 2 ms
+[       OK ] Default/HashTableMultiThreadTest.Fine/7 (58 ms)
+[ RUN      ] Default/HashTableMultiThreadTest.Fine/8
+Execution time: 2 ms
+[       OK ] Default/HashTableMultiThreadTest.Fine/8 (60 ms)
+[----------] 18 tests from Default/HashTableMultiThreadTest (3842 ms total)
+
+[----------] Global test environment tear-down
+[==========] 27 tests from 2 test suites ran. (8034 ms total)
+[  PASSED  ] 9 tests.
+[  FAILED  ] 18 tests, listed below:
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/0, where GetParam() = (0, 1000000, 1)
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/1, where GetParam() = (1, 1000000, 1)
+[  FAILED  ] Default/HashTableSingleThreadTest.Coarse/2, where GetParam() = (2, 1000000, 1)
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/0, where GetParam() = (0, 1000000, 1)
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/1, where GetParam() = (1, 1000000, 1)
+[  FAILED  ] Default/HashTableSingleThreadTest.Fine/2, where GetParam() = (2, 1000000, 1)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/0, where GetParam() = (0, 1000000, 2)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/1, where GetParam() = (0, 1000000, 4)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/2, where GetParam() = (0, 1000000, 8)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/3, where GetParam() = (1, 1000000, 2)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/4, where GetParam() = (1, 1000000, 4)
+[  FAILED  ] Default/HashTableMultiThreadTest.Coarse/5, where GetParam() = (1, 1000000, 8)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/0, where GetParam() = (0, 1000000, 2)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/1, where GetParam() = (0, 1000000, 4)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/2, where GetParam() = (0, 1000000, 8)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/3, where GetParam() = (1, 1000000, 2)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/4, where GetParam() = (1, 1000000, 4)
+[  FAILED  ] Default/HashTableMultiThreadTest.Fine/5, where GetParam() = (1, 1000000, 8)
+
+18 FAILED TESTS
